@@ -1,0 +1,167 @@
+---
+title: "data_wrangling2"
+author: "Xuehan Yang"
+date: "2021/10/18"
+output: github_document
+---
+Websties are composed of html + css. Content is html, css controls the appearance. So we can use CSS selector to select unique identifier of specific html content.
+
+download html using read_html,
+extract elements with html_elements() and CSS selector
+extract contents with html_text() and html_table()
+
+APIs
+
+provide a way to communicate with software. request specific data from a server. http
+
+httr contains a collection of tools for contructing HTTP requests.
+focus on GET
+Query
+
+API data formats
+sometimes, go to the web and click download. # But data changes often. this way is not reproducible.
+Most cases, get JavaScriptObjectNotation(JSON) JSON files can be parsed in R using jsonlite.
+
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+
+# NSDUH
+
+```{r}
+url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+drug_use_html = read_html(url) # this step is done on the Internet
+
+drug_use_html
+```
+
+```{r}
+drug_use_html %>% 
+  html_table()
+```
+
+get the contents from the first list element
+```{r}
+table_marj =
+  drug_use_html %>% 
+  html_table() %>% 
+  first() # if you want to take 2-n tables, use nth(2)
+```
+
+```{r}
+table_marj =
+  drug_use_html %>% 
+  html_table() %>% 
+  first() %>% 
+  slice(-1) # remove the first row which is a note.
+```
+
+# Star Wars
+
+Get some star wars data...
+
+```{r}
+cost = read_html("https://www.bestplaces.net/cost_of_living/city/new_york/new_york") %>% 
+  html_table(header = TRUE) %>% 
+  first()
+```
+
+CSS Selectors
+```{r}
+sw_url = "https://www.imdb.com/list/ls070150896/"
+
+swm_html = 
+  read_html(sw_url)
+```
+
+
+```{r}
+title_vec = 
+  swm_html %>%
+  html_elements(".lister-item-header a") %>%
+  html_text()
+
+gross_rev_vec = 
+  swm_html %>%
+  html_elements(".text-small:nth-child(7) span:nth-child(5)") %>%
+  html_text()
+
+runtime_vec = 
+  swm_html %>%
+  html_elements(".runtime") %>%
+  html_text()
+
+swm_df = 
+  tibble(
+    title = title_vec,
+    rev = gross_rev_vec,
+    runtime = runtime_vec)
+```
+
+## Napoleon
+
+Dynamite dynamite
+
+```{r}
+dynamite_url  = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
+
+dynamite_df = read_html(dynamite_url)
+
+dy_review_title =
+  dynamite_df %>% 
+  html_elements(".a-text-bold span") %>% 
+  html_text()
+
+dy_df = tibble(
+  title = dy_review_title
+)
+
+```
+
+## Using an API
+
+Get some data from API about water
+
+```{r}
+nyc_water = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.csv") %>% 
+  content("parsed")
+```
+
+Let's see what JSON looks like
+```{r}
+nyc_water = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.json") %>% 
+  content("text") %>%
+  jsonlite::fromJSON() %>%
+  as_tibble()
+```
+
+BRFSS data via API
+```{r}
+brfss_smart2010 = 
+  GET("https://chronicdata.cdc.gov/resource/acme-vg9e.csv",
+      query = list("$limit" = 5000)) %>% #api dont just send you everyting, it is kind of protection.
+  content("parsed")
+```
+NYC restaurant project for reference.
+
+What about Poke!
+```{r}
+poke = 
+  GET("http://pokeapi.co/api/v2/pokemon/1") %>%
+  content()
+
+poke$name
+
+poke$height
+```
+
+
+
+
