@@ -426,17 +426,29 @@ swm_df =
 Dynamite dynamite
 
 ``` r
-dynamite_url  = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
+url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
 
-dynamite_df = read_html(dynamite_url)
+dynamite_html = read_html(url)
 
-dy_review_title =
-  dynamite_df %>% 
-  html_elements(".a-text-bold span") %>% 
+review_titles = 
+  dynamite_html %>%
+  html_elements(".a-text-bold span") %>%
   html_text()
 
-dy_df = tibble(
-  title = dy_review_title
+review_stars = 
+  dynamite_html %>%
+  html_elements("#cm_cr-review_list .review-rating") %>%
+  html_text()
+
+review_text = 
+  dynamite_html %>%
+  html_elements(".review-text-content span") %>%
+  html_text()
+
+reviews = tibble(
+  title = review_titles,
+  stars = review_stars,
+  text = review_text
 )
 ```
 
